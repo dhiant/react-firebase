@@ -3,29 +3,48 @@ import { DataGrid } from "@mui/x-data-grid";
 import { userColumns } from "../../datatablesource";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, doc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 
 const Datatable = () => {
   const [data, setData] = useState([]);
+  const [isDataFetched, setIsDataFetched] = useState(false);
 
   useEffect(() => {
-    const fetchDataFromCloudFirestore = async () => {
-      // put asynchronous code inside try/catch block
-      try {
+    // const fetchDataFromCloudFirestore = async () => {
+    // getting all documents from cloud firestore with no real time updates
+    // put asynchronous code inside try/catch block
+    // try {
+    //   let list = [];
+    //   const querySnapshot = await getDocs(collection(db, "users"));
+    //   querySnapshot.forEach((doc) => {
+    //     list.push({ id: doc.id, ...doc.data() });
+    //   });
+    //   setData(list);
+    // } catch (err) {
+    //   console.log(err);
+    // }
+    // };
+    // fetchDataFromCloudFirestore();
+
+    // getting real time updates with cloud firestore
+    const unsub = onSnapshot(
+      collection(db, "users"),
+      (snapShot) => {
         let list = [];
-        const querySnapshot = await getDocs(collection(db, "users"));
-        querySnapshot.forEach((doc) => {
+        snapShot.docs.forEach((doc) => {
           list.push({ id: doc.id, ...doc.data() });
-          // console.log(list);
         });
         setData(list);
-      } catch (err) {
-        console.log(err);
+        setIsDataFetched(true);
+      },
+      (error) => {
+        console.log(error);
       }
+    );
+    return () => {
+      unsub();
     };
-
-    fetchDataFromCloudFirestore();
   }, []);
 
   const handleDelete = async (id) => {
@@ -68,14 +87,18 @@ const Datatable = () => {
           Add New
         </Link>
       </div>
-      <DataGrid
-        className="datagrid"
-        rows={data}
-        columns={userColumns.concat(actionColumn)}
-        pageSize={9}
-        rowsPerPageOptions={[9]}
-        checkboxSelection
-      />
+      {isDataFetched ? (
+        <DataGrid
+          className="datagrid"
+          rows={data}
+          columns={userColumns.concat(actionColumn)}
+          pageSize={9}
+          rowsPerPageOptions={[9]}
+          checkboxSelection
+        />
+      ) : (
+        <p>Getting the user...</p>
+      )}
     </div>
   );
 };
