@@ -3,16 +3,18 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useState } from "react";
-import { doc, setDoc } from "firebase/firestore";
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
 import { auth, db, storage } from "../../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-const New = ({ inputs, title }) => {
+const New = ({ inputs, title, form }) => {
   const [file, setFile] = useState("");
   const [formData, setFormData] = useState({});
   const [isButtonDisabled, setIsButtonDisabled] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const uploadFile = () => {
@@ -63,19 +65,31 @@ const New = ({ inputs, title }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // put asynchronous code inside try/catch block
-    try {
-      const response = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      // the id passed here comes from firebase response
-      await setDoc(doc(db, "users", response.user.uid), {
-        ...formData,
-      });
-    } catch (error) {
-      console.log(error);
+
+    if (form === "user") {
+      // put asynchronous code inside try/catch block
+      try {
+        const response = await createUserWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
+        // the id passed here comes from firebase response
+        await setDoc(doc(db, "users", response.user.uid), {
+          ...formData,
+        });
+        navigate(-1);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    if (form === "product") {
+      try {
+        await addDoc(collection(db, "products"), formData);
+      } catch (err) {
+        console.log(err);
+      }
+      navigate(-1);
     }
   };
 
