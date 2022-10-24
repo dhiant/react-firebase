@@ -3,13 +3,13 @@ import { DataGrid } from "@mui/x-data-grid";
 import { userColumns } from "../../datatablesource";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 
 const Datatable = () => {
   const [data, setData] = useState([]);
+
   useEffect(() => {
-    console.log("useeffect is running");
     const fetchDataFromCloudFirestore = async () => {
       // put asynchronous code inside try/catch block
       try {
@@ -18,15 +18,23 @@ const Datatable = () => {
         querySnapshot.forEach((doc) => {
           list.push({ id: doc.id, ...doc.data() });
           // console.log(list);
-          setData(list);
         });
+        setData(list);
       } catch (err) {
         console.log(err);
       }
     };
+
     fetchDataFromCloudFirestore();
   }, []);
-  const handleDelete = (id) => {
+
+  const handleDelete = async (id) => {
+    // delete data from cloud firestore
+    try {
+      await deleteDoc(doc(db, "users", id));
+    } catch (err) {
+      console.log(err);
+    }
     setData(data.filter((item) => item.id !== id));
   };
 
